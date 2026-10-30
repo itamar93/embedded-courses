@@ -1,0 +1,29 @@
+diff --git a/hw/arm/Kconfig b/hw/arm/Kconfig
+index 7877506..ddaa9af 100644
+--- a/hw/arm/Kconfig
++++ b/hw/arm/Kconfig
+@@ -142,6 +142,12 @@ config NETDUINOPLUS2
+     depends on TCG && ARM
+     select STM32F405_SOC
+ 
++config BLACKPILL_F411
++    bool
++    default y
++    depends on TCG && ARM
++    select STM32F405_SOC
++
+ config OLIMEX_STM32_H405
+     bool
+     default y
+diff --git a/hw/arm/meson.build b/hw/arm/meson.build
+index aeaf654..6ec4f6b 100644
+--- a/hw/arm/meson.build
++++ b/hw/arm/meson.build
+@@ -10,6 +10,7 @@ arm_common_ss.add(when: 'CONFIG_MICROBIT', if_true: files('microbit.c'))
+ arm_common_ss.add(when: 'CONFIG_MPS3R', if_true: files('mps3r.c'))
+ arm_common_ss.add(when: 'CONFIG_MUSICPAL', if_true: [files('musicpal.c')])
+ arm_common_ss.add(when: 'CONFIG_NETDUINOPLUS2', if_true: files('netduinoplus2.c'))
++arm_common_ss.add(when: 'CONFIG_BLACKPILL_F411', if_true: files('blackpill.c'))
+ arm_common_ss.add(when: 'CONFIG_OLIMEX_STM32_H405', if_true: files('olimex-stm32-h405.c'))
+ arm_common_ss.add(when: 'CONFIG_NPCM7XX', if_true: files('npcm7xx.c', 'npcm7xx_boards.c'))
+ arm_common_ss.add(when: 'CONFIG_NPCM8XX', if_true: files('npcm8xx.c', 'npcm8xx_boards.c'))

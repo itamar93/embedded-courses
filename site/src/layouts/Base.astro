@@ -1,0 +1,56 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+  wide?: boolean;
+}
+const { title, description = 'Hands-on courses in Embedded and Low-Level Engineering', wide = false } = Astro.props;
+const cfToken = import.meta.env.PUBLIC_CF_ANALYTICS_TOKEN;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title} · Bare Metal Lab</title>
+    <meta name="description" content={description} />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" />
+    {cfToken && (
+      <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon={JSON.stringify({ token: cfToken })}></script>
+    )}
+    <script>
+      const key = import.meta.env.PUBLIC_POSTHOG_KEY;
+      if (key) {
+        const { default: posthog } = await import('posthog-js');
+        posthog.init(key, {
+          api_host: import.meta.env.PUBLIC_POSTHOG_HOST ?? 'https://eu.i.posthog.com',
+          person_profiles: 'identified_only',
+        });
+        window.posthog = posthog;
+      }
+    </script>
+  </head>
+  <body class="min-h-screen font-sans antialiased">
+    <header class="border-b border-line">
+      <nav class={`mx-auto flex items-center justify-between px-4 py-3 ${wide ? 'max-w-[1600px]' : 'max-w-5xl'}`}>
+        <a href="/" class="flex items-center gap-2 font-mono text-sm font-semibold tracking-tight text-white">
+          <span class="inline-block h-2.5 w-2.5 rounded-full bg-accent shadow-[0_0_12px_var(--color-accent)]"></span>
+          bare-metal-lab
+        </a>
+        <div class="flex gap-5 text-sm text-slate-300">
+          <a href="/courses/mini-os" class="hover:text-white">Mini OS course</a>
+          <a href="/#how" class="hover:text-white">How labs work</a>
+        </div>
+      </nav>
+    </header>
+    <main class={`mx-auto px-4 ${wide ? 'max-w-[1600px]' : 'max-w-5xl'}`}>
+      <slot />
+    </main>
+    <footer class="mt-24 border-t border-line py-8 text-center text-xs text-slate-500">
+      Hands-on courses in Embedded and Low-Level Engineering
+    </footer>
+  </body>
+</html>

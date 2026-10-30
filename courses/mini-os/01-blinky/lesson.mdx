@@ -1,0 +1,127 @@
+---
+title: Blinky from scratch
+module: 1
+access: free
+minutes: 45
+summary: Boot an STM32 with your own vector table, reset handler and linker script, then blink the Black Pill's LED by writing registers.
+---
+
+## The goal: a mini OS, from scratch
+
+By the end of this course you will have built a small operating system on an ARM Cortex-M4, the STM32F411 on a WeAct Black Pill. No vendor HAL. No libraries. No libc. Just a bare chip, a compiler, a flash programmer and a reference manual.
+
+But we have to start somewhere, and in embedded, "start somewhere" means blinking an LED.
+
+In Arduino, blinking an LED is five lines: `digitalWrite(LED, HIGH)`, upload, done. A lot happens behind the scenes that Arduino hides from you. In this module we strip all of that away.
+
+## What happens when you power on?
+
+The processor doesn't know where your code is. It looks at address `0x08000000`, the beginning of Flash, and expects a **vector table**: a list of addresses.
+
+The hardware loads the first entry into the **Stack Pointer (SP)** and the second, the **Reset Handler**, into the **Program Counter (PC)**, and starts running from there.
+
+```c
+__attribute__((section(".isr_vector")))
+uint32_t vector_table[] = {
+    (uint32_t)&_estack,          // Initial Stack Pointer
+    (uint32_t)&Reset_Handler,    // loaded into PC, execution starts here
+    (uint32_t)&NMI_Handler,
+    (uint32_t)&HardFault_Handler
+};
+```
+
+No bootloader, no BIOS. The hardware fetches two addresses from Flash and starts running. Open `platform/stm32f411/boot/startup.c` in the editor to see the whole file.
+
+## The reset handler
+
+On a desktop, the C runtime prepares memory before `main()` runs. On bare metal there is no C runtime: we are the C runtime. The stack is already set from the vector table, so the reset handler has two jobs:
+
+1. **Copy `.data` from Flash to SRAM.** Initialized globals live in Flash but must be writable at run time.
+2. **Zero `.bss`.** The C standard says uninitialized globals start at zero.
+
+Then it calls `kmain()`, our entry point.
+
+## The linker script
+
+The linker script tells the linker where each section goes. The Black Pill's STM32F411CE has 512 KB of Flash at `0x08000000` and 128 KB of SRAM at `0x20000000`:
+
+```
+MEMORY {
+    FLASH (RX)  : ORIGIN = 0x08000000, LENGTH = 512K
+    SRAM  (RWX) : ORIGIN = 0x20000000, LENGTH = 128K
+}
+```
+
+- **`.text`** goes to Flash: the vector table, code and read-only data.
+- **`.data`** lives in SRAM, with its initial values stored in Flash.
+- **`.bss`** goes to SRAM and is zeroed at startup.
+
+The linker also defines the symbols the reset handler uses: `_etext`, `_sdata`, `_edata`, `_sbss` and `_ebss`.
+
+## Talking to hardware
+
+Every STM32 peripheral is controlled through **memory-mapped registers**: 32-bit values at fixed addresses. The **reference manual** (RM0383 for the STM32F411) tells you which address does what. We mirror its layout with C structs in `regs.h`:
+
+```c
+typedef struct {
+    volatile uint32_t MODER;   // Offset 0x00
+    volatile uint32_t OTYPER;  // Offset 0x04
+    volatile uint32_t OSPEEDR; // Offset 0x08
+    volatile uint32_t PUPDR;   // Offset 0x0C
+    volatile uint32_t IDR;     // Offset 0x10
+    volatile uint32_t ODR;     // Offset 0x14
+    ...
+} GPIO_TypeDef;
+
+#define GPIOC ((GPIO_TypeDef *)0x40020800UL)
+```
+
+Every field is `volatile`, which tells the compiler that every read and write matters, because hardware can change these values on its own.
+
+## The Black Pill's LED
+
+The Black Pill has one user LED, on **pin 13 of port C (PC13)**. It is wired between 3.3 V and the pin, so it is **active low**: the LED lights when the pin is driven to 0.
+
+## Step 1: enable the clock
+
+Peripheral clocks are off by default to save power (**clock gating**). Touch a GPIO port before enabling its clock and nothing happens: no error, just silence.
+
+GPIO ports sit on the **AHB1** bus. In `RCC_AHB1ENR`, ports A to E are bits 0 to 4, so port C is bit 2.
+
+> **TODO 1** in `hal/gpio/gpio.c`: implement `gpio_init(port)`.
+
+## Step 2: make the pin an output
+
+Each pin has a 2-bit field in `MODER`: `00` input, `01` output, `10` alternate function, `11` analog. Clear the field first, then set it. You will use this read-modify-write pattern everywhere.
+
+> **TODO 2** in `hal/gpio/gpio.c`: implement `gpio_set_mode()`.
+>
+> **TODO 3** in `drivers/led/led.c`: use both functions in `led_init()`.
+
+## Step 3: toggle it
+
+Flip bit 13 of the Output Data Register with XOR.
+
+> **TODO 4** in `drivers/led/led.c`: implement `led_toggle()`.
+
+## Step 4: SysTick, the first step toward an OS timer
+
+Without a delay the LED flips too fast to see. There is no `sleep()` on bare metal. The Cortex-M4 has **SysTick**, a 24-bit countdown timer. At the 16 MHz reset clock, loading 16000 gives one millisecond per countdown; we poll the `COUNTFLAG` bit. Later, this same timer will drive our scheduler.
+
+> **TODO 5** in `hal/systick/systick.c`: implement `systick_delay_ms()`.
+
+## Run it three ways
+
+1. **In the browser.** Click **Run**. The board view lights the LED each time PC13 goes low, and **Check** grades your registers and timing.
+2. **In QEMU on your machine.** Clone the course repo, build our QEMU once with `emulator/qemu/build.sh`, then run `make qemu QEMU=../../../../emulator/qemu/out/bin/qemu-system-arm` in this lab's folder. Pin changes print as JSON lines.
+3. **On a real Black Pill.** Hold BOOT0, plug in USB-C, release BOOT0, then run `make flash` (needs `dfu-util`). You can also click **Download .bin** in the workbench and flash that file. One-click flashing from the browser is coming soon.
+
+## What we built
+
+| Layer | Component |
+| --- | --- |
+| Platform | `startup.c`, `linker.ld`, `regs.h` |
+| HAL | GPIO, SysTick |
+| Driver | LED |
+
+Next, we stop flying blind: **UART serial output**, our `printf` on bare metal.

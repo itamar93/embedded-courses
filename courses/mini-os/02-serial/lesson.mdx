@@ -1,0 +1,87 @@
+---
+title: Talking to the outside world
+module: 2
+access: free
+minutes: 45
+summary: Bring up USART2 by hand and build print_message(), the printf of our mini OS.
+---
+
+## We can blink, but we're blind
+
+The LED proves the toolchain works, the startup code is correct and we can control hardware. But it only says one thing: on or off. When a driver fails later, how do we know *what* broke? We need to send real text to a computer. We need **UART**.
+
+## What is UART?
+
+UART is one of the simplest serial protocols. Two wires, TX and RX, and no clock: both sides agree on a speed (the **baud rate**) ahead of time. Each byte goes out as a start bit, 8 data bits and a stop bit.
+
+The STM32F411 has **USART2** on **PA2 (TX)** and **PA3 (RX)**. The Black Pill has no USB-to-serial chip, so on real hardware you connect a cheap **USB-to-TTL adapter**: adapter RX to PA2, adapter TX to PA3, and GND to GND. Then open any serial terminal at 9600 baud. In the browser and in QEMU, the console shows USART2 directly.
+
+## Reusing the GPIO HAL
+
+The GPIO HAL from module 1 works here too: same `gpio_init()`, same `gpio_set_mode()`, different pins and a different mode. That is how a layered system takes shape: build a layer, verify it, build the next one on top.
+
+UART pins use **alternate function** mode instead of plain output. Each pin can be routed to several peripherals through an alternate function selector; PA2 and PA3 use **AF7** for USART2.
+
+> **TODO 1** in `hal/uart/uart.c`: enable the GPIOA clock and the USART2 clock. USART2 sits on the **APB1** bus: bit 17 of `RCC_APB1ENR`.
+>
+> **TODO 2**: put PA2 and PA3 in alternate function mode and select AF7 with `gpio_set_alt_function()`.
+
+## The baud rate
+
+The baud rate register (`BRR`) holds a divider of the peripheral clock. At 16 MHz and 9600 baud:
+
+```c
+return (APB1_CLK_FREQ + (UART2_BAUDRATE / 2)) / UART2_BAUDRATE;
+```
+
+Adding half the baud rate before dividing rounds to the nearest integer instead of truncating: 16 MHz / 9600 gives **1667**.
+
+> **TODO 3**: implement `calculate_baudrate()`.
+
+## Sending our first byte
+
+To transmit, wait until the transmit buffer is empty (the `TXE` flag in `SR`), then write the byte to `DR`. The peripheral handles start bits, stop bits and timing in hardware.
+
+> **TODO 4**: implement `uart_send_data()`.
+
+## print_message: our printf
+
+We want strings, not raw bytes. There is no standard library, so there is no `strlen`. We use our own `my_strlen()` from `lib/src/string.c` and wrap UART into `print_message()`.
+
+> **TODO 5** in `lib/src/stdout.c`: implement `print_message()`.
+
+## LED and serial together
+
+`apps/2_serial/main.c` initializes both drivers, says hello, then toggles the LED every 2 seconds and reports each change:
+
+```c
+void kmain(void) {
+    uart_init();
+    led_init();
+    print_message("Hello, World!\n\r");
+    while (1) {
+        print_message("LED ON\n\r");
+        led_on();
+        delay();
+        print_message("LED OFF\n\r");
+        led_off();
+        delay();
+    }
+}
+```
+
+Click **Run** and watch the console and the LED stay in step.
+
+## What we built (cumulative)
+
+| Layer | Component | New in this module |
+| --- | --- | :---: |
+| Platform | startup, linker, regs | |
+| HAL | GPIO, SysTick | |
+| HAL | **UART** | **yes** |
+| Driver | LED | |
+| Lib | **string**, **stdout** | **yes** |
+
+## What's next
+
+This is the end of the free part of the course. In the full course we drive an **ST7789 LCD over SPI**, render text with our own bitmap font, add interrupts, and build a scheduler and a shell: a real mini OS.

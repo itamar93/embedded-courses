@@ -1,0 +1,16 @@
+id: mini-os
+title: Build a Mini OS on STM32
+summary: >-
+  Build a small operating system for the STM32F411 from an empty folder:
+  no vendor HAL, no RTOS, no libc. Just the reference manual, a compiler and bare metal.
+board: WeAct Black Pill (STM32F411CE)
+based_on: https://github.com/itamar93/stm32-mini-os
+modules:
+  - { id: 01-blinky, title: Blinky from scratch, access: free }
+  - { id: 02-serial, title: Talking to the outside world, access: free }
+  - { id: 03-lcd-spi, title: Driving an LCD over SPI, access: paid, status: planned }
+  - { id: 04-gfx, title: Text on the screen, access: paid, status: planned }
+  - { id: 05-console, title: A console of our own, access: paid, status: planned }
+  - { id: 06-interrupts, title: Interrupts, access: paid, status: planned }
+  - { id: 07-scheduler, title: A preemptive scheduler, access: paid, status: planned }
+  - { id: 08-shell, title: An interactive shell, access: paid, status: planned }
