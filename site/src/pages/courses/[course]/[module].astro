@@ -18,7 +18,7 @@ const course = getCourse(courseId)!;
 const { Content } = await render(lesson);
 const index = course.modules.findIndex((m) => m.id === module);
 const next = course.modules[index + 1];
-const runnerUrl = import.meta.env.PUBLIC_RUNNER_URL ?? 'http://localhost:8080';
+const runnerUrl = import.meta.env.PUBLIC_RUNNER_URL ?? '';
 ---
 <Base title={lesson.data.title} description={lesson.data.summary} wide>
   <div class="grid gap-8 py-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">

@@ -34,10 +34,10 @@ You need `arm-none-eabi-gcc`, `make`, Go 1.24, Node 22 and QEMU's build dependen
 emulator/qemu/build.sh
 
 # 2. Start the build-and-run service on :8080
-cd services/runner && go run . &
+(cd services/runner && go run .) &
 
 # 3. Start the site on :4321
-cd site && npm install && npm run dev
+cd site && cp .env.example .env && npm install && npm run dev
 ```
 
 Open http://localhost:4321/courses/mini-os/01-blinky and click **Run**.
@@ -79,5 +79,6 @@ Set these in `site/.env` (see `site/.env.example`); both are off when empty:
 
 ## Deploying
 
+- **Site** and **lab service**: step-by-step free setup in [deploy/README.md](deploy/README.md).
 - **Site**: static (`npm run build` → `site/dist`), for example on Cloudflare Pages. Set `PUBLIC_RUNNER_URL` to the runner's public URL.
 - **Runner**: `docker build -f services/runner/Dockerfile .` builds QEMU, the service and the toolchain into one image. Learner code is untrusted: run it under gVisor (`--runtime=runsc`) with no network, and set `-origin` to the site's URL.

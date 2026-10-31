@@ -20,7 +20,8 @@ FROM ubuntu:24.04
 RUN apt-get update && apt-get install -y --no-install-recommends \
         gcc-arm-none-eabi binutils-arm-none-eabi make libglib2.0-0t64 libpixman-1-0 \
     && rm -rf /var/lib/apt/lists/* \
-    && useradd --create-home runner
+    && useradd --create-home runner \
+    && mkdir -p /run/runner && chown runner /run/runner
 COPY --from=qemu /opt/qemu/bin/qemu-system-arm /usr/local/bin/
 COPY --from=runner /runner /usr/local/bin/runner
 COPY courses /srv/courses

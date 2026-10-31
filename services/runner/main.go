@@ -11,6 +11,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"sync"
@@ -57,6 +58,18 @@ func main() {
 	mux.HandleFunc("POST /api/runs/{id}/input", s.input)
 	mux.HandleFunc("DELETE /api/runs/{id}", s.stopRun)
 
+	// RUNNER_UNIX_SOCKET lets the service run with no network at all behind a
+	// reverse proxy that shares the socket (see deploy/docker-compose.yml)
+	if path := os.Getenv("RUNNER_UNIX_SOCKET"); path != "" {
+		os.Remove(path)
+		ln, err := net.Listen("unix", path)
+		if err != nil {
+			log.Fatal(err)
+		}
+		os.Chmod(path, 0o666)
+		log.Printf("runner listening on %s", path)
+		log.Fatal(http.Serve(ln, s.cors(mux)))
+	}
 	log.Printf("runner listening on %s", *addr)
 	log.Fatal(http.ListenAndServe(*addr, s.cors(mux)))
 }
