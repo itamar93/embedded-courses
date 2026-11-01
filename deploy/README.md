@@ -20,6 +20,8 @@ browser ──https──> Cloudflare Pages (static site)
    - Environment variable `NODE_VERSION` = `22`
 4. Deploy. Note the address it gives you, for example `https://embedded-courses.pages.dev`.
 
+If Cloudflare created a **Worker** instead (its settings show a deploy command `npx wrangler deploy`), that works too: `site/wrangler.jsonc` tells Wrangler to upload `site/dist` as static files. Keep root `site` and build `npm run build`. The Worker's name in Cloudflare must match `"name"` in `site/wrangler.jsonc` (`embedded-courses`); change one of them if they differ. Its address ends in `.workers.dev`, and its environment variables go under **Settings → Build → Variables and secrets**.
+
 Lessons show a placeholder in place of the lab workbench until step 3 below. Merge PR #1 first: Pages and the setup script both use the `main` branch.
 
 ## 2. Lab service on Oracle Cloud (about 30 minutes, most of it waiting)
