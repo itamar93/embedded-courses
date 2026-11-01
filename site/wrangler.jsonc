@@ -1,0 +1,10 @@
+// Cloudflare Workers static-assets config. With this file, `npx wrangler deploy`
+// uploads the prebuilt site in ./dist instead of trying to convert it to SSR.
+{
+  "name": "embedded-courses",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "404-page"
+  }
+}
