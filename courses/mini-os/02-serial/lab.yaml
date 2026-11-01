@@ -1,0 +1,22 @@
+board: blackpill-f411
+modes: [web, qemu, hardware]
+app: 2_serial
+editable:
+  - hal/uart/uart.c
+  - lib/src/stdout.c
+run_ms: 4500
+checks:
+  - name: USART2 clock is enabled
+    hint: USART2 is on APB1. Set bit 17 in RCC->APB1ENR.
+    expect: { reg: RCC_APB1ENR, mask: 0x20000, equals: 0x20000 }
+  - name: PA2 is routed to USART2 (AF7)
+    hint: Alternate function mode in MODER, then 7 in the PA2 field of AFRL.
+    expect: { reg: GPIOA_AFRL, mask: 0xF00, equals: 0x700 }
+  - name: Baud rate divider is 9600 at 16 MHz
+    hint: (16000000 + 4800) / 9600 = 1667
+    expect: { reg: USART2_BRR, mask: 0xFFFF, equals: 1667 }
+  - name: Board says hello
+    hint: print_message() should send every character of the string.
+    expect: { uart_contains: "Hello, World!" }
+  - name: LED state is reported over serial
+    expect: { uart_contains: "LED OFF" }

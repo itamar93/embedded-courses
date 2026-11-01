@@ -1,0 +1,18 @@
+board: blackpill-f411
+modes: [web, qemu, hardware]
+app: 1_blinky
+editable:
+  - hal/gpio/gpio.c
+  - drivers/led/led.c
+  - hal/systick/systick.c
+run_ms: 3000
+checks:
+  - name: GPIOC clock is enabled
+    hint: Set bit 2 (GPIOCEN) in RCC->AHB1ENR.
+    expect: { reg: RCC_AHB1ENR, mask: 0x4, equals: 0x4 }
+  - name: PC13 is an output
+    hint: Write 01 into bits 27:26 of GPIOC->MODER.
+    expect: { reg: GPIOC_MODER, mask: 0x0C000000, equals: 0x04000000 }
+  - name: LED blinks every 500 ms
+    hint: Toggle ODR bit 13, then wait 500 ms with SysTick.
+    expect: { pin: PC13, toggles: { min: 5, max: 7 } }

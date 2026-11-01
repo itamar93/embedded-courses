@@ -1,0 +1,18 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --color-ink: #0b1220;
+  --color-panel: #111a2e;
+  --color-line: #22304d;
+  --color-accent: #3ddc97;
+  --color-accent-dim: #1f7a56;
+  --color-warn: #f5b041;
+}
+
+html { background: var(--color-ink); color: #dbe4f3; }
+.prose :where(code):not(:where(pre *)) { color: #9fe7c6; }
+.prose :where(code):not(:where(pre *))::before,
+.prose :where(code):not(:where(pre *))::after { content: none; }

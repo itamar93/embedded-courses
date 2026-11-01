@@ -1,0 +1,53 @@
+---
+import Base from '../layouts/Base.astro';
+import { getCourses } from '../lib/courses';
+
+const courses = getCourses();
+---
+<Base title="Hands-on Embedded and Low-Level Engineering">
+  <section class="py-20 sm:py-28">
+    <p class="font-mono text-sm text-accent">// write registers, not wrappers</p>
+    <h1 class="mt-4 max-w-3xl text-4xl font-bold tracking-tight text-white sm:text-6xl">
+      Hands-on courses in Embedded and Low-Level Engineering
+    </h1>
+    <p class="mt-6 max-w-2xl text-lg text-slate-300">
+      Learn by building real firmware for STM32 with GCC. Every lab runs in your browser,
+      in QEMU on your machine, and on a $4 board you can buy anywhere.
+    </p>
+    <div class="mt-10 flex flex-wrap gap-3">
+      <a href="/courses/mini-os/01-blinky" class="rounded-md bg-accent px-5 py-3 font-semibold text-ink hover:brightness-110">Start the free lessons</a>
+      <a href="/courses/mini-os" class="rounded-md border border-line px-5 py-3 font-semibold text-white hover:bg-panel">See the course</a>
+    </div>
+  </section>
+
+  <section id="how" class="grid gap-4 sm:grid-cols-3">
+    {[
+      ['In the browser', 'Edit C, click Run. Your code is compiled with arm-none-eabi-gcc and runs on an emulated STM32F411. Watch the LED and the serial console live.'],
+      ['In QEMU', 'Download any lab and run make qemu. The same Makefile, the same binary, the same Black Pill machine.'],
+      ['On real hardware', 'Flash a WeAct Black Pill over USB and see your code drive real pins. No IDE, no vendor tools.'],
+    ].map(([title, body]) => (
+      <div class="rounded-lg border border-line bg-panel p-5">
+        <h3 class="font-semibold text-white">{title}</h3>
+        <p class="mt-2 text-sm text-slate-300">{body}</p>
+      </div>
+    ))}
+  </section>
+
+  <section class="mt-20">
+    <h2 class="text-2xl font-bold text-white">Courses</h2>
+    <div class="mt-6 grid gap-4">
+      {courses.map((c) => (
+        <a href={`/courses/${c.id}`} class="block rounded-lg border border-line bg-panel p-6 hover:border-accent-dim">
+          <div class="flex flex-wrap items-baseline justify-between gap-2">
+            <h3 class="text-xl font-semibold text-white">{c.title}</h3>
+            <span class="font-mono text-xs text-slate-400">{c.board}</span>
+          </div>
+          <p class="mt-2 text-slate-300">{c.summary}</p>
+          <p class="mt-4 text-sm text-accent">
+            {c.modules.filter((m) => m.access === 'free').length} free modules · {c.modules.length} modules in the full course
+          </p>
+        </a>
+      ))}
+    </div>
+  </section>
+</Base>

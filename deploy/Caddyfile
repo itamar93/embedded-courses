@@ -1,0 +1,6 @@
+{$DOMAIN} {
+	reverse_proxy unix//run/runner/runner.sock {
+		# Server-Sent Events must not be buffered
+		flush_interval -1
+	}
+}

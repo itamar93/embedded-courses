@@ -1,0 +1,56 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../../../layouts/Base.astro';
+import Workbench from '../../../components/Workbench';
+import { getCourse } from '../../../lib/courses';
+
+export async function getStaticPaths() {
+  const lessons = await getCollection('lessons');
+  return lessons.map((lesson) => {
+    const [course, module] = lesson.id.split('/');
+    return { params: { course, module }, props: { lesson } };
+  });
+}
+
+const { lesson } = Astro.props;
+const { course: courseId, module } = Astro.params;
+const course = getCourse(courseId)!;
+const { Content } = await render(lesson);
+const index = course.modules.findIndex((m) => m.id === module);
+const next = course.modules[index + 1];
+const runnerUrl = import.meta.env.PUBLIC_RUNNER_URL ?? '';
+---
+<Base title={lesson.data.title} description={lesson.data.summary} wide>
+  <div class="grid gap-8 py-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
+    <article class="min-w-0">
+      <a href={`/courses/${course.id}`} class="font-mono text-xs text-slate-400 hover:text-accent">← {course.title}</a>
+      <p class="mt-4 font-mono text-sm text-accent">
+        module {lesson.data.module} · {lesson.data.minutes} min · {lesson.data.access === 'free' ? 'free' : 'full course'}
+      </p>
+      <h1 class="mt-1 text-3xl font-bold tracking-tight text-white">{lesson.data.title}</h1>
+      <p class="mt-3 text-slate-300">{lesson.data.summary}</p>
+      <div class="prose prose-invert mt-8 max-w-none prose-headings:text-white prose-a:text-accent prose-pre:bg-panel prose-pre:border prose-pre:border-line prose-blockquote:border-accent prose-blockquote:not-italic">
+        <Content />
+      </div>
+      {next && (
+        <div class="mt-12 rounded-lg border border-line bg-panel p-5">
+          <p class="text-sm text-slate-400">Next module</p>
+          {next.access === 'free' && next.status !== 'planned'
+            ? <a href={`/courses/${course.id}/${next.id}`} class="text-lg font-semibold text-accent hover:underline">{next.title} →</a>
+            : <p class="text-lg font-semibold text-white">{next.title} <span class="ml-2 rounded-full bg-warn/15 px-2.5 py-0.5 align-middle text-xs text-warn">Full course</span></p>}
+        </div>
+      )}
+    </article>
+    <aside class="min-w-0 lg:sticky lg:top-4 lg:h-[calc(100vh-2rem)]">
+      {runnerUrl ? (
+        <Workbench client:only="react" runnerUrl={runnerUrl} course={course.id} module={module!} />
+      ) : (
+        <div class="rounded-lg border border-line bg-panel p-6">
+          <p class="font-mono text-xs uppercase tracking-wider text-slate-500">Lab workbench</p>
+          <p class="mt-3 text-white">The editor, board and serial console appear here when the lab service is connected.</p>
+          <p class="mt-2 text-sm text-slate-400">This preview has no lab service, so Run and Check are turned off.</p>
+        </div>
+      )}
+    </aside>
+  </div>
+</Base>
